@@ -376,3 +376,141 @@ FROM zepto
 GROUP BY category, out_of_stock
 ORDER BY out_of_stock DESC, COUNT(*) DESC;
 
+SELECT category, 
+	   CASE 
+	       WHEN discount_percent > 50 THEN 'HIGH'
+	       WHEN discount_percent BETWEEN 20 AND 50 THEN'MEDIUM'
+		   ELSE 'LOW'
+	   END AS discount_category,
+	   COUNT(*) AS product_count
+FROM zepto
+GROUP BY category, discount_category
+ORDER BY category, discount_category;
+
+-- 
+--  6. Derived Metrics (Real Analyst Work)
+-- 
+
+SELECT category, AVG(mrp), AVG(selling_price), AVG(discount_percent), SUM(selling_price * available_quantity)
+FROM zepto
+GROUP BY category
+ORDER BY category;
+
+SELECT category, SUM(mrp - selling_price) AS profit_margin
+FROM zepto
+GROUP BY category
+ORDER BY category;
+
+SELECT category, AVG(selling_price) AS avg_sales_price, AVG(discount_percent) AS avg_discount 
+FROM zepto
+GROUP BY category
+ORDER BY category;
+
+-- 
+--  7. Data Quality + Aggregation
+-- 
+
+SELECT category, AVG(discount_percent) AS avg_given_discount, AVG(((mrp - selling_price) * 100.0) / mrp) AS avg_calculated_discount
+FROM zepto
+GROUP BY category
+HAVING AVG(discount_percent) <> AVG(((mrp - selling_price) * 100.0) / mrp)
+ORDER BY category;
+
+SELECT 
+    category,
+    COUNT(*) AS inconsistent_records
+FROM zepto
+WHERE discount_percent <> ((mrp - selling_price) * 100.0) / mrp
+GROUP BY category
+ORDER BY category;
+
+-- 
+--  8. CASE + GROUP BY 
+-- 
+
+SELECT 
+    CASE 
+        WHEN mrp > 1000 THEN 'Expensive'
+        WHEN mrp BETWEEN 500 AND 1000 THEN 'Mid-range'
+        ELSE 'Budget'
+    END AS price_category,
+    COUNT(*) AS product_count
+FROM zepto
+GROUP BY price_category
+ORDER BY price_category;
+
+SELECT 
+    CASE 
+        WHEN discount_percent > 50 THEN 'High'
+        WHEN discount_percent BETWEEN 20 AND 50 THEN 'Medium'
+        ELSE 'Low'
+    END AS discount_category,
+    COUNT(*) AS product_count,
+    AVG(selling_price * available_quantity) AS avg_revenue
+FROM zepto
+GROUP BY discount_category
+ORDER BY discount_category;
+
+-- 
+--  9. Business Insight Problems
+-- 
+
+SELECT 
+    category,
+    AVG(mrp) AS avg_mrp,
+    AVG(discount_percent) AS avg_discount
+FROM zepto
+GROUP BY category
+ORDER BY avg_mrp DESC, avg_discount ASC;
+
+SELECT 
+    category,
+    SUM(available_quantity) AS total_inventory,
+    SUM(selling_price * available_quantity) AS total_revenue
+FROM zepto
+GROUP BY category
+ORDER BY total_inventory DESC, total_revenue ASC;
+
+SELECT 
+    category,
+    SUM(available_quantity) AS total_inventory,
+    SUM(selling_price * available_quantity) AS total_revenue
+FROM zepto
+GROUP BY category
+ORDER BY total_inventory ASC, total_revenue DESC;
+
+-- 
+--  10. Performance Thinking 
+-- 
+
+SELECT
+	category,
+    out_of_stock,
+    COUNT(*) AS product_count
+FROM zepto
+GROUP BY category, out_of_stock;
+
+SELECT 
+    category,
+    ROUND(
+        100.0 * SUM(CASE WHEN out_of_stock = TRUE THEN 1 ELSE 0 END) / COUNT(*),
+        2
+    ) AS out_of_stock_percentage
+FROM zepto
+GROUP BY category
+ORDER BY category;
+
+-- 
+-- 
+--  Level 3 
+-- 
+-- 
+
+SELECT * 
+FROM zepto
+LIMIT 0;
+
+SELECT category, product_name, mrp
+FROM zepto
+GROUP BY category, product_name, mrp
+ORDER BY category ASC, mrp DESC;
